@@ -100,6 +100,32 @@ match ':controller(/:action(/:id(.:format)))'
 
 * Không chia sẻ giữa controller và view từ 2 biến instance trở lên.
 
+* Đối với biến instance biểu thị resource chính ở Controller, hãy gán vào object của resource đó. Ví dụ, đối với `@article` ở bên trong ArticlesController thì gán instance của class `Article` vào. Với `@articles` thì gán collection của nó vào.
+
+```ruby
+# Không tốt
+class ArticlesController < ApplicationController
+  def index
+    @articles = Article.all.pluck [:id, :title]
+  end
+
+  def show
+    @article = "This is an article."
+  end
+end
+
+# Tốt
+class ArticlesController < ApplicationController
+  def index
+    @articles = Article.all
+  end
+
+  def show
+    @article = Article.find params[:id]
+  end
+end
+```
+
 * Controller cần xử lý ngoại lệ xuất hiện tại model. Cần phải thông báo việc xuất hiện ngoại lệ bằng cách gửi đến client code 400 trở lên.
 
 * Để tham số của render là symbol.
@@ -125,16 +151,21 @@ end
 
 Ngăn chặn việc phát sinh nhiều xử lý khi mà người dùng thao tác refresh.
 
-* Không dùng tên method trong các hàm callback và cũng không dùng block để thiết lập các xử lý mà nên dùng ``` lamda ```
+* Trong hàm callback nên sử dụng tên method hoặc ```lamda```. Không được sử dụng block ở đây.
+
 
 ```ruby
-#cách viết không tốt
+# cách viết không tốt
 
-  before_filter{@users = User.all}
+  before_action{@users = User.all} # brock
 
-#cách viết tốt
+# cách viết tốt
 
-  before_filter ->{@users = User.all}
+  before_action :methodname # method name
+
+# cách viết cũng tốt
+
+  before_action ->{@users = User.all} # lambda
 ```
 
 ##Model
@@ -331,6 +362,8 @@ end
 ##View
 
 * Không gọi trực tiếp model trong view, mà phải sử dụng thông qua controller hoặc helper.
+
+* Tuy nhiên vẫn có ngoại lệ cho phép trực tiếp gọi Model trong View như một master cho các thẻ như thẻ Select.
 
 * Không viết các xử lý phức tạp trong view. Những xử lý phức tạp thì nên đặt trong các view helper hoặc trong model.
 

@@ -100,6 +100,32 @@ match ':controller(/:action(/:id(.:format)))'
 
 * 2個以上のインスタンス変数をコントローラーとviewの間で共有してはいけない。
 
+* コントローラにおけるメインのリソースを示すインスタンス変数には、そのリソースのオブジェクトをアサインすること。例えば、ArticlesController内の `@article` には `Article` クラスのインスタンスをアサインする。 `@articles` には、そのコレクションをアサインする。
+
+```ruby
+# bad
+class ArticlesController < ApplicationController
+  def index
+    @articles = Article.all.pluck [:id, :title]
+  end
+
+  def show
+    @article = "This is an article."
+  end
+end
+
+# good
+class ArticlesController < ApplicationController
+  def index
+    @articles = Article.all
+  end
+
+  def show
+    @article = Article.find params[:id]
+  end
+end
+```
+
 * モデル等が発生させた Exception はコントローラーが必ず処理をする。コントローラーは Exception を受け取ったらステータスコード 400 以上をクライアントに通知することで、 Exception の発生を通知しなければならない。
 
 * render の引数は シンボルとする。
@@ -113,7 +139,7 @@ render :new
 ```ruby
 class HomeController < ApplicationController
 
-  def inded
+  def index
   end
 
 end
@@ -125,16 +151,20 @@ end
 
 ユーザーのリフレッシュ操作による多重処理を防止するため。
 
-* コールバックにメソッド名では無く、処理を設定する時には、ブロックでは無く、``` lambda ``` で記述する。
+* コールバックの記述には、メソッド名か ```lambda``` を使うこと。ここにブロックを使ってはいけない。
 
 ```ruby
-#bad
+# bad
 
-  before_filter{@users = User.all}
+  before_action{@users = User.all} # brock
 
-#good
+# good
 
-  before_filter ->{@users = User.all}
+  before_action :methodname # method name
+
+# also good
+
+  before_action ->{@users = User.all} # lambda
 ```
 
 ##モデル
@@ -347,6 +377,8 @@ end
 ##ビュー
 
 * ビューの中でモデルを直接呼んではいけない。コントローラーにインスタンス化させるか、ヘルパー内で利用する。
+
+* select タグなどのためのマスターとして View の中でモデルを直接呼ぶのは例外的に許可することとする。
 
 * ビュー内で複雑な処理を記載しない。複雑な処理が必要であればビューヘルパーに切り出すか、モデル内で処理させる。
 
